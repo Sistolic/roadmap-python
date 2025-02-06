@@ -1,4 +1,5 @@
 import json
+from random import choice, shuffle
 from os import system as sys
 from datetime import datetime
 
@@ -17,17 +18,13 @@ def print_help():
       done - to list all done tasks
       todo - to list tasks to do
       in-progress - to list tasks in progress
-""")
-
-def search_id(task_id: int) -> bool:
-  for idx, task in enumerate(tasks):
-    for value in task.values():
-      if value == task_id: return search_id(task_id + 1)
-      else: return task_id
+      """)
 
 def create_task(task: str) -> str:
-  id = len(tasks) + 1 if len(tasks) == 0 else search_id(len(tasks) + 1)
+  letters = 'abcdefghijklmnopqrstuvwxyz'
+  nums = '1234567890'
   
+  id = f'{choice(letters)}{choice(nums)}'
   tasks.append({
     "id": id,
     "description": task,
@@ -37,7 +34,7 @@ def create_task(task: str) -> str:
   })
   
   return id
-    
+  
 def update_task(task_id: int, new_task: str):
   update_time = f'{datetime.now().strftime("%H:%M - %d %B %Y")}'
   
@@ -76,7 +73,20 @@ def list_tasks(command: str):
 def save_archive():
   with open(path, "w") as file:
     json.dump(tasks, file, indent=2)
-    
+
+def validate_task(cmd, params):
+  task = ""
+  match cmd:
+    case "add": task = " ".join(params[0:])
+    case "update": task = " ".join(params[1:])
+  
+  task = task.replace("\"", "")
+  if len(task) > 0:
+    return task
+  else:
+    input("You must add the ID or the task.")
+    return False
+
 path = "tasks.json"
 
 try:
@@ -95,27 +105,29 @@ while True:
   command = "".join(cmd_split[:1])
 
   params = cmd_split[1:]
-  task = " ".join(params[:]).replace("\"", "")
   
-  if params and params[0].isdigit():
-    task = " ".join(params[1:]).replace("\"", "")
-    task_id = int("".join(params[:1]))
-    if len(tasks) < task_id or task_id <= 0:
-      input("You must add a valid ID.")
-      continue
-  
-  if command != "delete" and (params and not task):
-    input("You must add a task to do.")
-    continue
-  
+  task = ""
+  if params:
+    task_id = params[0]
+    
   try:
     match command:
       case "help": print_help()
       case "quit": 
         save_archive()
         break
-      case "add": print(f'Task added successfully (ID: {create_task(task)})')
-      case "update": update_task(task_id, task)
+      case "add":
+        task = validate_task(command, params)
+        if isinstance(task, str):
+          print(f'Task added successfully (ID: {create_task(task)})')
+        else:
+          continue
+      case "update":
+        task = validate_task(command, params)
+        if isinstance(task, str):
+          update_task(task_id, task)
+        else:
+          continue
       case "delete": delete_task(task_id)
       case "mark-in-progress": mark_tasks(task_id, "in-progress")
       case "mark-done": mark_tasks(task_id, "done")
@@ -124,7 +136,7 @@ while True:
         else: list_tasks(params[-1] if params else "list")
       case other: print("Command not allow")
   
-  except NameError:
-    print("You must add the ID in the command.")
+  except NameError as e:
+    print("You made something wrong: ", e)
     
-  input("...")
+  input("Press enter...")
