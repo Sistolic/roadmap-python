@@ -4,3 +4,4 @@ This repository contains solutions to project encountered on the site [roadmap.s
 
 ### Projects
 - [Task-tracker CLI](https://roadmap.sh/projects/task-tracker)
+- [GitHub user activity](https://roadmap.sh/projects/github-user-activity)
